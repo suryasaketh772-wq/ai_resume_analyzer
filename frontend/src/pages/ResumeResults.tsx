@@ -1,7 +1,5 @@
 import React from 'react';
 import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Download } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 
 export default function ResumeResults({ resultData: propResultData }: { resultData?: any }) {
   // Remove dummy data fallback and use real passed data
@@ -25,22 +23,8 @@ export default function ResumeResults({ resultData: propResultData }: { resultDa
     scoreBorder = 'border-yellow-600';
   }
 
-  const handleExportPDF = async () => {
-    const element = document.getElementById('resume-results-dashboard');
-    if (!element) return;
-    
-    try {
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Resume_Analysis_${candidate_name || 'Report'}.pdf`);
-    } catch (err) {
-      console.error("Failed to generate PDF", err);
-    }
+  const handleExportPDF = () => {
+    window.print();
   };
 
   return (
@@ -51,7 +35,7 @@ export default function ResumeResults({ resultData: propResultData }: { resultDa
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Analysis Results</h1>
         <button 
           onClick={handleExportPDF}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+          className="print-hidden flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
         >
           <Download className="w-4 h-4" />
           <span>Export Report</span>

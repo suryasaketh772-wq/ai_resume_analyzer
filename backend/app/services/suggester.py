@@ -6,10 +6,9 @@ def generate_suggestions(missing_skills: list[str], score: float, extracted_text
     
     # 1. Missing skills suggestions
     if missing_skills:
-        for skill in missing_skills:
-            # Format the skill nicely (e.g., "node.js" -> "Node.js")
-            formatted_skill = skill.title() if len(skill) > 3 else skill.upper()
-            suggestions.append(f"Add {formatted_skill} experience or coursework to your resume.")
+        formatted_skills = [skill.title() if len(skill) > 3 else skill.upper() for skill in missing_skills]
+        skills_str = ", ".join(formatted_skills)
+        suggestions.append(f"Consider highlighting or gaining experience in the following missing skills: {skills_str}.")
             
     # 2. Score-based suggestions
     if score < 50.0:

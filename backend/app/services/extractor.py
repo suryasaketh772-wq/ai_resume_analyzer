@@ -34,16 +34,26 @@ def extract_contact_info(text: str) -> dict:
     if phones:
         info["phone"] = phones[0]
         
-    # 3. Extract Name via spaCy NER
-    if nlp:
-        # Process the first 1000 characters (names are usually at the top)
+    # 3. Extract Name via Heuristics and spaCy NER
+    # Often, the candidate's name is the very first non-empty line of the resume.
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    if lines:
+        first_line = lines[0]
+        # If the first line is short (1-4 words), has no numbers, and no weird symbols, it's highly likely the name.
+        if 0 < len(first_line.split()) <= 4 and not any(char.isdigit() for char in first_line) and len(first_line) < 40:
+            # Ignore common headers that might be at the top
+            ignore_words = {"resume", "cv", "curriculum vitae", "profile"}
+            if first_line.lower() not in ignore_words:
+                info["name"] = first_line.title()
+
+    # Fallback to spaCy NER if heuristic didn't find a good name
+    if not info["name"] and nlp:
         doc = nlp(text[:1000])
         for ent in doc.ents:
             if ent.label_ == "PERSON":
-                # Basic validation: ensure it looks like a name (2-3 words, no weird characters)
-                name = ent.text.strip()
-                if 3 < len(name) < 30 and "\n" not in name and any(c.isalpha() for c in name):
-                    info["name"] = name
+                name = ent.text.strip().replace('\n', ' ')
+                if 3 < len(name) < 30 and any(c.isalpha() for c in name):
+                    info["name"] = name.title()
                     break
                     
     return info

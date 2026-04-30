@@ -9,6 +9,7 @@ class Resume(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    file_path = Column(String, nullable=False)
     extracted_text = Column(Text, nullable=True)
     candidate_name = Column(String, nullable=True)
     candidate_email = Column(String, nullable=True)

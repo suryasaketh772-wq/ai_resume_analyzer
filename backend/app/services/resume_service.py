@@ -89,6 +89,13 @@ def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int
         resume.score = ai_results["score"]
         resume.missing_skills = ai_results["missing_skills"]
         resume.suggestions = ai_results["suggestions"]
+        
+        match_results = {
+            "score": ai_results["score"],
+            "found_skills": skills,
+            "missing_skills": ai_results["missing_skills"]
+        }
+        suggestions = ai_results["suggestions"]
     else:
         # Fallback to Basic Matcher
         match_results = calculate_match_score(skills, required_skills)

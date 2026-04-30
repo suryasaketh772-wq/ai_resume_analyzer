@@ -1,13 +1,17 @@
-import requests
+import httpx
 import json
 from app.services.matcher import calculate_match_score
 from app.services.suggester import generate_suggestions
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
-def analyze_with_ai(extracted_text: str, required_skills: list[str]) -> dict:
+def analyze_with_ai_sync(extracted_text: str, required_skills: list[str]) -> dict:
+    """Synchronous fallback if needed."""
+    pass
+
+async def analyze_with_ai(extracted_text: str, required_skills: list[str]) -> dict:
     """
-    Sends the resume text and required skills to local Llama 3 via Ollama.
+    Asynchronously sends the resume text and required skills to local Llama 3 via Ollama.
     Falls back to the basic matcher if Ollama is not available or fails.
     """
     prompt = f"""
@@ -30,16 +34,17 @@ def analyze_with_ai(extracted_text: str, required_skills: list[str]) -> dict:
     """
     
     try:
-        response = requests.post(OLLAMA_URL, json={
-            "model": "llama3",
-            "prompt": prompt,
-            "stream": False,
-            "format": "json"
-        }, timeout=30)
-        
-        response.raise_for_status()
-        data = response.json()
-        result = json.loads(data.get("response", "{}"))
+        async with httpx.AsyncClient() as client:
+            response = await client.post(OLLAMA_URL, json={
+                "model": "llama3",
+                "prompt": prompt,
+                "stream": False,
+                "format": "json"
+            }, timeout=30.0)
+            
+            response.raise_for_status()
+            data = response.json()
+            result = json.loads(data.get("response", "{}"))
         
         return {
             "score": float(result.get("score", 0)),

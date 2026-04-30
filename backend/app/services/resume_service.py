@@ -1,5 +1,6 @@
 import os
 import uuid
+import asyncio
 from sqlalchemy.orm import Session
 from fastapi import UploadFile
 from app.models.resume import Resume
@@ -34,7 +35,7 @@ async def process_and_save_resume(db: Session, user: User, file: UploadFile) -> 
     file_path = await save_uploaded_file(file)
     
     try:
-        extracted_text = extract_text_from_pdf(file_path)
+        extracted_text = await asyncio.to_thread(extract_text_from_pdf, file_path)
     except Exception as e:
         raise FileProcessingException(f"Failed to extract text from PDF: {str(e)}")
         
@@ -70,7 +71,7 @@ async def process_and_save_resume(db: Session, user: User, file: UploadFile) -> 
         "suggestions": db_resume.suggestions or []
     }
 
-def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int) -> dict:
+async def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int) -> dict:
     resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == user_id).first()
     if not resume:
         raise ResourceNotFoundException("Resume not found")
@@ -83,7 +84,7 @@ def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int
     required_skills = role.required_skills or []
     
     # Try AI Engine first
-    ai_results = analyze_with_ai(resume.extracted_text, required_skills)
+    ai_results = await analyze_with_ai(resume.extracted_text, required_skills)
     
     if ai_results:
         resume.score = ai_results["score"]

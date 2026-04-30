@@ -24,13 +24,13 @@ async def upload_resume(
     return await process_and_save_resume(db, current_user, file)
 
 @router.post("/{resume_id}/match")
-def match_resume_to_role(
+async def match_resume_to_role(
     resume_id: int,
     role_id: int = Body(..., embed=True),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return analyze_resume_match(db, resume_id, role_id, current_user.id)
+    return await analyze_resume_match(db, resume_id, role_id, current_user.id)
 
 @router.get("/", response_model=List[ResumeResponse])
 def get_user_resumes_route(

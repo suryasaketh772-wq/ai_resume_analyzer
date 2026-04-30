@@ -5,10 +5,12 @@ from fastapi import UploadFile
 from app.models.resume import Resume
 from app.models.job_role import JobRole
 from app.models.user import User
+from app.services.extractor import extract_contact_info
 from app.core.exceptions import ResourceNotFoundException, FileProcessingException
 from app.services.pdf_parser import extract_text_from_pdf
 from app.services.skill_extractor import extract_skills
 from app.services.matcher import calculate_match_score
+from app.services.ai_engine import analyze_with_ai
 from app.services.suggester import generate_suggestions
 
 UPLOAD_DIR = "uploads"
@@ -36,10 +38,15 @@ async def process_and_save_resume(db: Session, user: User, file: UploadFile) -> 
     except Exception as e:
         raise FileProcessingException(f"Failed to extract text from PDF: {str(e)}")
         
+    contact_info = extract_contact_info(extracted_text)
+
     db_resume = Resume(
         user_id=user.id,
         file_path=file_path,
         extracted_text=extracted_text,
+        candidate_name=contact_info.get("name"),
+        candidate_email=contact_info.get("email"),
+        candidate_phone=contact_info.get("phone")
     )
     db.add(db_resume)
     db.commit()
@@ -52,6 +59,9 @@ async def process_and_save_resume(db: Session, user: User, file: UploadFile) -> 
         "user_id": db_resume.user_id,
         "file_path": db_resume.file_path,
         "extracted_text": db_resume.extracted_text,
+        "candidate_name": db_resume.candidate_name,
+        "candidate_email": db_resume.candidate_email,
+        "candidate_phone": db_resume.candidate_phone,
         "score": db_resume.score,
         "role_id": db_resume.role_id,
         "created_at": db_resume.created_at,
@@ -72,17 +82,26 @@ def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int
     skills = extract_skills(resume.extracted_text)
     required_skills = role.required_skills or []
     
-    match_results = calculate_match_score(skills, required_skills)
-    suggestions = generate_suggestions(
-        missing_skills=match_results["missing_skills"],
-        score=match_results["score"],
-        extracted_text=resume.extracted_text
-    )
+    # Try AI Engine first
+    ai_results = analyze_with_ai(resume.extracted_text, required_skills)
     
-    resume.score = match_results["score"]
+    if ai_results:
+        resume.score = ai_results["score"]
+        resume.missing_skills = ai_results["missing_skills"]
+        resume.suggestions = ai_results["suggestions"]
+    else:
+        # Fallback to Basic Matcher
+        match_results = calculate_match_score(skills, required_skills)
+        suggestions = generate_suggestions(
+            missing_skills=match_results["missing_skills"],
+            score=match_results["score"],
+            extracted_text=resume.extracted_text
+        )
+        resume.score = match_results["score"]
+        resume.missing_skills = match_results["missing_skills"]
+        resume.suggestions = suggestions
+        
     resume.role_id = role.id
-    resume.missing_skills = match_results["missing_skills"]
-    resume.suggestions = suggestions
     db.commit()
     db.refresh(resume)
     
@@ -104,6 +123,9 @@ def get_user_resumes(db: Session, user_id: int):
             "user_id": r.user_id,
             "file_path": r.file_path,
             "extracted_text": r.extracted_text,
+            "candidate_name": r.candidate_name,
+            "candidate_email": r.candidate_email,
+            "candidate_phone": r.candidate_phone,
             "score": r.score,
             "role_id": r.role_id,
             "created_at": r.created_at,

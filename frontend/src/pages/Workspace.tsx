@@ -164,7 +164,10 @@ export default function Workspace() {
                 score: selectedResumeData.score || 0,
                 found_skills: selectedResumeData.detected_skills || [],
                 missing_skills: selectedResumeData.missing_skills || [],
-                suggestions: selectedResumeData.suggestions || []
+                suggestions: selectedResumeData.suggestions || [],
+                candidate_name: selectedResumeData.candidate_name,
+                candidate_email: selectedResumeData.candidate_email,
+                candidate_phone: selectedResumeData.candidate_phone,
               }} 
             />
           </div>

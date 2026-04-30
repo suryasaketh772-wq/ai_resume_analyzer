@@ -1,5 +1,7 @@
 import React from 'react';
-import { CheckCircle2, XCircle, AlertCircle, Lightbulb } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 export default function ResumeResults({ resultData: propResultData }: { resultData?: any }) {
   // Remove dummy data fallback and use real passed data
@@ -7,6 +9,7 @@ export default function ResumeResults({ resultData: propResultData }: { resultDa
   const found_skills = propResultData?.found_skills || [];
   const missing_skills = propResultData?.missing_skills || [];
   const suggestions = propResultData?.suggestions || [];
+  const { candidate_name, candidate_email, candidate_phone } = propResultData || {};
 
   // Determine score color
   let scoreColor = 'text-green-600';
@@ -22,12 +25,64 @@ export default function ResumeResults({ resultData: propResultData }: { resultDa
     scoreBorder = 'border-yellow-600';
   }
 
+  const handleExportPDF = async () => {
+    const element = document.getElementById('resume-results-dashboard');
+    if (!element) return;
+    
+    try {
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Resume_Analysis_${candidate_name || 'Report'}.pdf`);
+    } catch (err) {
+      console.error("Failed to generate PDF", err);
+    }
+  };
+
   return (
-    <div className="w-full p-8 max-w-5xl mx-auto space-y-8 pb-20">
+    <div id="resume-results-dashboard" className="w-full p-8 max-w-5xl mx-auto space-y-8 pb-20 bg-gray-50">
       
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Analysis Results</h1>
+        <button 
+          onClick={handleExportPDF}
+          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          <span>Export Report</span>
+        </button>
+      </div>
+      
+      <div className="flex flex-col mb-4">
+        
+        {/* Contact Info Card */}
+        {(candidate_name || candidate_email || candidate_phone) && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-wrap gap-6 items-center">
+            {candidate_name && (
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Candidate Name</span>
+                <span className="text-lg font-semibold text-gray-900">{candidate_name}</span>
+              </div>
+            )}
+            {candidate_email && (
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Email</span>
+                <span className="text-lg font-semibold text-gray-900">{candidate_email}</span>
+              </div>
+            )}
+            {candidate_phone && (
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Phone</span>
+                <span className="text-lg font-semibold text-gray-900">{candidate_phone}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Top Section: Score */}

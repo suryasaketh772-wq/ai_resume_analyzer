@@ -9,14 +9,14 @@ export default function UploadResume({ onUploadSuccess }: { onUploadSuccess?: (d
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-  const [roles, setRoles] = useState<any[]>([]);
+  const [groupedRoles, setGroupedRoles] = useState<Record<string, any[]>>({});
   const [selectedRole, setSelectedRole] = useState<string>('');
 
   useEffect(() => {
     const fetchRoles = async () => {
       try {
         const response = await resumesAPI.getRoles();
-        setRoles(response.data);
+        setGroupedRoles(response.data);
       } catch (err) {
         console.error("Failed to fetch roles", err);
       }
@@ -93,14 +93,7 @@ export default function UploadResume({ onUploadSuccess }: { onUploadSuccess?: (d
                 disabled={uploading}
               >
                 <option value="">-- Select a Role --</option>
-                {Object.entries(
-                  roles.reduce((acc, role) => {
-                    const cat = role.category || "Uncategorized";
-                    if (!acc[cat]) acc[cat] = [];
-                    acc[cat].push(role);
-                    return acc;
-                  }, {} as Record<string, any[]>)
-                ).map(([category, catRoles]) => (
+                {Object.entries(groupedRoles).map(([category, catRoles]) => (
                   <optgroup key={category} label={category}>
                     {catRoles.map(role => (
                       <option key={role.id} value={role.id}>{role.role_name}</option>

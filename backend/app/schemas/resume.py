@@ -13,6 +13,8 @@ class ResumeResponse(ResumeBase):
     user_id: int
     created_at: datetime
     detected_skills: list[str] = []
+    missing_skills: list[str] = []
+    suggestions: list[str] = []
 
     class Config:
         from_attributes = True

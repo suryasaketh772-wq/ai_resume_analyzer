@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Float, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.database import Base
@@ -12,6 +13,8 @@ class Resume(Base):
     extracted_text = Column(Text, nullable=True)
     score = Column(Float, nullable=True)
     role_id = Column(Integer, ForeignKey("job_roles.id"), nullable=True)
+    missing_skills = Column(JSONB, nullable=True)
+    suggestions = Column(JSONB, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="resumes")

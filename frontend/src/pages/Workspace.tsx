@@ -163,8 +163,8 @@ export default function Workspace() {
               resultData={{
                 score: selectedResumeData.score || 0,
                 found_skills: selectedResumeData.detected_skills || [],
-                missing_skills: [], // TODO: We need the backend to return missing skills and suggestions in the main resume object or fetch it
-                suggestions: [] // For now this will rely on dummy fallback in ResumeResults component if empty
+                missing_skills: selectedResumeData.missing_skills || [],
+                suggestions: selectedResumeData.suggestions || []
               }} 
             />
           </div>

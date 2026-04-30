@@ -41,7 +41,7 @@ export const resumesAPI = {
   }),
   analyze: (resumeId: number, roleId: number) => api.post(`/resumes/${resumeId}/match`, { role_id: roleId }),
   getAll: () => api.get('/resumes/'),
-  getRoles: () => api.get('/resumes/roles'),
+  getRoles: () => api.get('/job-roles/'),
   delete: (resumeId: number) => api.delete(`/resumes/${resumeId}`),
 };
 

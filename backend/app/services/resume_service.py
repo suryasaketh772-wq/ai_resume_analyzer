@@ -55,7 +55,9 @@ async def process_and_save_resume(db: Session, user: User, file: UploadFile) -> 
         "score": db_resume.score,
         "role_id": db_resume.role_id,
         "created_at": db_resume.created_at,
-        "detected_skills": skills
+        "detected_skills": skills,
+        "missing_skills": db_resume.missing_skills or [],
+        "suggestions": db_resume.suggestions or []
     }
 
 def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int) -> dict:
@@ -71,17 +73,18 @@ def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int
     required_skills = role.required_skills or []
     
     match_results = calculate_match_score(skills, required_skills)
-    
-    resume.score = match_results["score"]
-    resume.role_id = role.id
-    db.commit()
-    db.refresh(resume)
-    
     suggestions = generate_suggestions(
         missing_skills=match_results["missing_skills"],
         score=match_results["score"],
         extracted_text=resume.extracted_text
     )
+    
+    resume.score = match_results["score"]
+    resume.role_id = role.id
+    resume.missing_skills = match_results["missing_skills"]
+    resume.suggestions = suggestions
+    db.commit()
+    db.refresh(resume)
     
     return {
         "resume_id": resume.id,
@@ -91,7 +94,24 @@ def analyze_resume_match(db: Session, resume_id: int, role_id: int, user_id: int
     }
 
 def get_user_resumes(db: Session, user_id: int):
-    return db.query(Resume).filter(Resume.user_id == user_id).order_by(Resume.created_at.desc()).all()
+    resumes = db.query(Resume).filter(Resume.user_id == user_id).order_by(Resume.created_at.desc()).all()
+    
+    result = []
+    for r in resumes:
+        skills = extract_skills(r.extracted_text)
+        result.append({
+            "id": r.id,
+            "user_id": r.user_id,
+            "file_path": r.file_path,
+            "extracted_text": r.extracted_text,
+            "score": r.score,
+            "role_id": r.role_id,
+            "created_at": r.created_at,
+            "detected_skills": skills,
+            "missing_skills": r.missing_skills or [],
+            "suggestions": r.suggestions or []
+        })
+    return result
 
 def delete_resume(db: Session, resume_id: int, user_id: int) -> bool:
     resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == user_id).first()
